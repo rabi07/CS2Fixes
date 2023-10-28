@@ -35,6 +35,9 @@
 #include "igameevents.h"
 #include "gameconfig.h"
 
+#define VPROF_ENABLED
+#include "tier0/vprof.h"
+
 #include "tier0/memdbgon.h"
 
 extern CGlobalVars *gpGlobals;
@@ -147,9 +150,6 @@ bool FASTCALL Detour_IsHearingClient(void* serverClient, int index)
 
 void FASTCALL Detour_UTIL_SayTextFilter(IRecipientFilter &filter, const char *pText, CCSPlayerController *pPlayer, uint64 eMessageType)
 {
-	int entindex = filter.GetRecipientIndex(0).Get();
-	CCSPlayerController *target = (CCSPlayerController *)g_pEntitySystem->GetBaseEntity((CEntityIndex)entindex);
-
 	if (pPlayer)
 		return UTIL_SayTextFilter(filter, pText, pPlayer, eMessageType);
 
@@ -169,10 +169,10 @@ void FASTCALL Detour_UTIL_SayText2Filter(
 	const char *param3,
 	const char *param4)
 {
-	int entindex = filter.GetRecipientIndex(0).Get() + 1;
-	CCSPlayerController *target = (CCSPlayerController *)g_pEntitySystem->GetBaseEntity((CEntityIndex)entindex);
-
 #ifdef _DEBUG
+    CPlayerSlot slot = filter.GetRecipientIndex(0);
+	CCSPlayerController* target = CCSPlayerController::FromSlot(slot);
+
 	if (target)
 		Message("Chat from %s to %s: %s\n", param1, target->GetPlayerName(), param2);
 #endif
@@ -182,7 +182,7 @@ void FASTCALL Detour_UTIL_SayText2Filter(
 
 void FASTCALL Detour_Host_Say(CCSPlayerController *pController, CCommand &args, bool teamonly, int unk1, const char *unk2)
 {
-	bool bGagged = pController && g_playerManager->GetPlayer(pController->GetPlayerSlot())->IsGagged();
+	bool bGagged = pController && pController->GetZEPlayer()->IsGagged();
 
 	if (!bGagged && *args[1] != '/')
 	{
